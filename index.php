@@ -40,9 +40,10 @@
 </nav>
 
     <div class="row">
-            <div class="col-md-6">
-                <video src="" id="preview" width="100%"></video>
-            </div>
+    <div class="col-md-6">
+    <button id="startScanButton">Escanear</button>
+    <video src="" id="preview" width="100%" style="display: none;"></video>
+</div>
             <div class="col-md-6">
             <form id="qrForm" class="form-horizontal">
     <label for="cargo">ESCOGE UN CARGO</label>
@@ -105,49 +106,72 @@
     </div>
 
     <script>
-    let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
+    let scanner; // Declarar el escáner fuera de las funciones para acceder a él en diferentes ámbitos
 
-    Instascan.Camera.getCameras().then(function (cameras) {
-        if (cameras.length > 0) {
-            scanner.start(cameras[0]);
-        } else {
-            alert('No se encontraron cámaras.');
-        }
-    }).catch(function (e) {
-        console.error(e);
-    });
+    // Función para iniciar el escáner
+    function startScan() {
+        let videoElement = document.getElementById('preview');
 
-    scanner.addListener('scan', function (c) {
-        // Obtener el valor del código QR
-        let qrCodeValue = c;
+        // Comprobar si las cámaras están disponibles
+        Instascan.Camera.getCameras().then(function (cameras) {
+            if (cameras.length > 0) {
+                // Mostrar el video
+                videoElement.style.display = 'block';
 
-        // Obtener el valor del campo de opción
-        let opcionValue = document.getElementById('opcion').value;
+                // Iniciar o detener el escáner según el estado actual
+                if (scanner) {
+                    // Si ya hay un escáner, detenerlo
+                    scanner.stop();
+                    scanner = null;
+                } else {
+                    // Si no hay un escáner, iniciar uno en la primera cámara encontrada
+                    scanner = new Instascan.Scanner({ video: videoElement });
+                    scanner.addListener('scan', function (c) {
+                        // Obtener el valor del código QR
+                        let qrCodeValue = c;
 
-        // Obtener el valor del campo de cargo
-        let cargoValue = document.getElementById('cargo').value;
+                        // Obtener el valor del campo de opción
+                        let opcionValue = document.getElementById('opcion').value;
 
-        // Enviar datos al archivo insert.php mediante AJAX
-        let xhr = new XMLHttpRequest();
-        xhr.open('POST', 'insert.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                // Mostrar el mensaje como un popup
-                var confirmed = window.confirm(xhr.responseText);
+                        // Obtener el valor del campo de cargo
+                        let cargoValue = document.getElementById('cargo').value;
 
-                // Puedes realizar acciones adicionales si se confirma
-                if (confirmed) {
-                    // Realizar alguna acción adicional después de la confirmación
+                        // Enviar datos al archivo insert.php mediante AJAX
+                        let xhr = new XMLHttpRequest();
+                        xhr.open('POST', 'insert.php', true);
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                        xhr.onreadystatechange = function () {
+                            if (xhr.readyState == 4 && xhr.status == 200) {
+                                // Mostrar el mensaje como un popup
+                                var confirmed = window.confirm(xhr.responseText);
+
+                                // Puedes realizar acciones adicionales si se confirma
+                                if (confirmed) {
+                                    // Realizar alguna acción adicional después de la confirmación
+                                }
+                            }
+                        };
+
+                        // Construir la cadena de datos a enviar
+                        let data = 'opcion=' + opcionValue + '&qrCodeValue=' + encodeURIComponent(qrCodeValue) + '&cargo=' + cargoValue;
+
+                        // Enviar la solicitud
+                        xhr.send(data);
+                    });
+
+                    scanner.start(cameras[0]);
                 }
+            } else {
+                alert('No se encontraron cámaras.');
             }
-        };
+        }).catch(function (e) {
+            console.error(e);
+        });
+    }
 
-        // Construir la cadena de datos a enviar
-        let data = 'opcion=' + opcionValue + '&qrCodeValue=' + encodeURIComponent(qrCodeValue) + '&cargo=' + cargoValue;
-
-        // Enviar la solicitud
-        xhr.send(data);
+    // Evento de clic en el botón de escanear
+    document.getElementById('startScanButton').addEventListener('click', function () {
+        startScan();
     });
 </script>
 
