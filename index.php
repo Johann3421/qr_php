@@ -40,9 +40,10 @@
 </nav>
 
     <div class="row">
-            <div class="col-md-6">
-                <video src="" id="preview" width="100%"></video>
-            </div>
+    <div class="col-md-6">
+    <button id="startScanButton">Escanear</button>
+    <video src="" id="preview" width="100%" style="display: none;"></video>
+</div>
             <div class="col-md-6">
             <form id="qrForm" class="form-horizontal">
     <label for="cargo">ESCOGE UN CARGO</label>
@@ -150,7 +151,30 @@
         xhr.send(data);
     });
 </script>
+<script>
+    document.getElementById('startScanButton').addEventListener('click', function () {
+        startScan();
+    });
 
+    function startScan() {
+        let videoElement = document.getElementById('preview');
+
+        // Comprobar si las cámaras están disponibles
+        Instascan.Camera.getCameras().then(function (cameras) {
+            if (cameras.length > 0) {
+                // Mostrar el video
+                videoElement.style.display = 'block';
+
+                // Iniciar el escáner en la primera cámara encontrada
+                scanner.start(cameras[0]);
+            } else {
+                alert('No se encontraron cámaras.');
+            }
+        }).catch(function (e) {
+            console.error(e);
+        });
+    }
+</script>
 
 
 </body>
